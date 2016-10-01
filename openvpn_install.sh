@@ -29,7 +29,7 @@ display_help() {
     echo "   -F, --full-install              This enables a full install. All flags are executed -I, -B, -P, -U, -R and -S.  A full install entails installing" 
     echo "                                   openvpn via apt-get, building a server config, enabling port forwarding, inserting ufw rules,"
     echo "                                   restarting ufw(so the added rules take effect), building the certificate authority and generating keys,"
-	echo "                                   and finally starting the openvpn service. Takes no arguments."
+    echo "                                   and finally starting the openvpn service. Takes no arguments."
     echo "   -I, --install-openvpn           This simply installs openvpn and its dependencies via apt-get. Takes no arguments."
     echo "   -B, --build-server-config-file  This builds server config. Optionally, you can provide an output file with the -o flag otherwiseTakes no arguments."
     echo "                                   the output file defaults to: /etc/openvpn/server.conf."
