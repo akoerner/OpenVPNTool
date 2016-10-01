@@ -1,15 +1,16 @@
 #!/bin/bash
 
-#This script installs and configures OpenVPN with a basic configuration.  Tested on Ubuntu Server 16.04 LTS use on other distributions at your own risk.
+#This script installs and configures OpenVPN with a basic configuration.  
+#Tested on Ubuntu Server 16.04 LTS use on other distributions at your own risk.
 
 #This script is basically an automation compilation of the following resources:
 #https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-14-04
 #https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-16-04
 #http://www.tutorialspoint.com/articles/how-to-set-up-openvpn-on-ubuntu-16-04
 
-#Usage: openvpn_install.sh -n "<server name>"  -i "<interface>"
 
-#Note: this defaults to AES-128-CBC which according to BSI recommendations of 2015 is still cryptographically secure see https://www.keylength.com/.
+#Note: this defaults to AES-128-CBC which according to 
+#BSI recommendations of 2015 is still cryptographically secure see https://www.keylength.com/.
 
 #########################
 # The command line help #
@@ -22,14 +23,15 @@ display_help() {
     echo
     echo "Required"
     echo "   -i, --interface                 interface to bind to e.g., eth0.  This is used to build the server.conf and for making ufw rules."
-	echo "                                   Takes the interface identifier as argument."
+    echo "                                   Takes the interface identifier as argument."
     echo "Optional"
     echo "   -n, --server-name               name of the openvpn server.  This will be used to generate key files as well as build the server.conf."
     echo "                                   If no name is provided then the script will default to \"server\". Takes servername as argument."
     echo "   -F, --full-install              This enables a full install. All flags are executed -I, -B, -P, -U, -R and -S.  A full install entails installing" 
     echo "                                   openvpn via apt-get, building a server config, enabling port forwarding, inserting ufw rules,"
     echo "                                   restarting ufw(so the added rules take effect), building the certificate authority and generating keys,"
-	echo "                                   and finally starting the openvpn service. Takes no arguments."
+    echo "                                   and finally starting the openvpn service. Takes no arguments."
+    echo "                                   NOTE: This enables ufw! Don't lock yourself out by blocking the ssh port!"
     echo "   -I, --install-openvpn           This simply installs openvpn and its dependencies via apt-get. Takes no arguments."
     echo "   -B, --build-server-config-file  This builds server config. Optionally, you can provide an output file with the -o flag otherwiseTakes no arguments."
     echo "                                   the output file defaults to: /etc/openvpn/server.conf."
@@ -37,6 +39,7 @@ display_help() {
     echo "   -P, --enable-packet-forwarding  Enables packet forwarding via sysctl. Takes no arguments."
     echo "   -U, --modify-ufw-rules          Modifies ufw for enabling packet forwarding and pass-through. Takes no arguments."
     echo "   -R, --reload-ufw                Reloads ufw so that modified rules take effect. Takes no arguments."
+    echo "                                   NOTE: This enables ufw! Don't lock yourself out by blocking the ssh port!"
     echo "   -B, --build-ca                  Generates crypto keys via easy-rsa and builds the certificate authority."
     echo "   -S, --start-openvpn-server      Starts the openvpn system d service."
     echo "   -h                              help"
@@ -66,10 +69,6 @@ RELOAD_UFW=false
 BUILD_CA=false
 START_OPENVPN_SERVER=false
 
-################################
-# Check if parameters options  #
-# are given on the command line#
-################################
 if [ $# -eq 0 ]; then
     display_help
 fi

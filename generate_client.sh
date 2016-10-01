@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#This script generates openvpn client keys using the easy-rsa build-key tool and creates a single distributable .ovpn file with all of the necessary keys.
-#This can be then distributed to users.
+#This script generates openvpn client keys using the easy-rsa build-key tool and creates a single distributable .ovpn file.
 
 KEY_DIR=/etc/openvpn/easy-rsa/keys
 
