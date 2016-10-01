@@ -47,5 +47,4 @@ Andrew Koernerv - andrew@k0ner.com
 
 
 ## License
-LICENSE.md
-
+[LICENSE.md](LICENSE.md)
