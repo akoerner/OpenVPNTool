@@ -15,11 +15,37 @@
 # The command line help #
 #########################
 display_help() {
-    echo "Usage: $0 -n <server name>  -i <interface>"
-    echo "Must be run as root."
-    echo "   -n, --server-name           name of the openvpn server.  This will be used to generate key files."
-    echo "   -i, --interface             interface to bind to e.g., eth0"
     echo
+    echo "Basic Usage: $0 -n <server name>  -i <interface> -F"
+    echo
+    echo "MUST be run as root."
+    echo
+    echo "Required"
+    echo "   -i, --interface                 interface to bind to e.g., eth0.  This is used to build the server.conf and for making ufw rules."
+	echo "                                   Takes the interface identifier as argument."
+    echo "Optional"
+    echo "   -n, --server-name               name of the openvpn server.  This will be used to generate key files as well as build the server.conf."
+    echo "                                   If no name is provided then the script will default to \"server\". Takes servername as argument."
+    echo "   -F, --full-install              This enables a full install. All flags are executed -I, -B, -P, -U, -R and -S.  A full install entails installing" 
+    echo "                                   openvpn via apt-get, building a server config, enabling port forwarding, inserting ufw rules,"
+    echo "                                   restarting ufw(so the added rules take effect), building the certificate authority and generating keys,"
+	echo "                                   and finally starting the openvpn service. Takes no arguments."
+    echo "   -I, --install-openvpn           This simply installs openvpn and its dependencies via apt-get. Takes no arguments."
+    echo "   -B, --build-server-config-file  This builds server config. Optionally, you can provide an output file with the -o flag otherwiseTakes no arguments."
+    echo "                                   the output file defaults to: /etc/openvpn/server.conf."
+    echo "   -o, --server-config-output-file Optional output file for the generated server config default is: /etc/openvpn/server.conf. Takes filename as argument."
+    echo "   -P, --enable-packet-forwarding  Enables packet forwarding via sysctl. Takes no arguments."
+    echo "   -U, --modify-ufw-rules          Modifies ufw for enabling packet forwarding and pass-through. Takes no arguments."
+    echo "   -R, --reload-ufw                Reloads ufw so that modified rules take effect. Takes no arguments."
+    echo "   -B, --build-ca                  Generates crypto keys via easy-rsa and builds the certificate authority."
+    echo "   -S, --start-openvpn-server      Starts the openvpn system d service."
+    echo "   -h                              help"
+    echo
+    echo "Example"
+    echo
+    echo "   sudo sh openvpn_install -n SomeServer -i eth0 -F"
+    echo "                                   This does a full install setting the server name to SomeServer and binding to eth0"
+    echo 
     # echo some stuff here for the -a or --add-options 
     exit 1
 }
@@ -28,6 +54,23 @@ display_help() {
 # Check if parameters options  #
 # are given on the command line#
 ################################
+
+SERVER_CONFIG_OUTPUT_FILE="/etc/openvpn/server.conf"
+SERVER_NAME="server"
+
+INSTALL_OPENVPN=false
+BUILD_SERVER_CONFIG_FILE=false
+ENABLE_PACKET_FORWARDING=false
+MODIFY_UFW_RULES=false
+RELOAD_UFW=false
+BUILD_CA=false
+START_OPENVPN_SERVER=false
+
+if [ $# -eq 0 ]; then
+    display_help
+    exit 1
+fi
+
 while :
 do
     case "$1" in
@@ -44,14 +87,55 @@ do
           INTERFACE="$2"
            shift 2
            ;;
-
+      -o | --server-config-output-file)
+          SERVER_CONFIG_OUTPUT_FILE="${2:-/etc/openvpn/server.conf}"
+           shift 2
+           ;;
+      -F | --full-install)
+          INSTALL_OPENVPN=true
+          BUILD_SERVER_CONFIG_FILE=true
+          ENABLE_PACKET_FORWARDING=true
+          MODIFY_UFW_RULES=true
+          REENABLE_UFW=true
+          BUILD_CA=true
+          START_OPENVPN_SERVER=true
+          shift 1
+           ;;
+      -I | --install-openvpn)
+          INSTALL_OPENVPN=true
+          shift 1
+           ;;
+      -B | --build-server-config-file)
+          BUILD_SERVER_CONFIG_FILE=true
+          shift 1
+           ;;
+      -P | --enable-packet-forwarding)
+          ENABLE_PACKET_FORWARDING=true
+          shift 1
+           ;;
+      -U | --modify-ufw-rules)
+          MODIFY_UFW_RULES=true
+          shift 1
+           ;;
+      -R | --reload-ufw)
+          RELOAD_UFW=true
+          shift 1
+           ;;
+      -C | --build-ca)
+          BUILD_CA=true
+          shift 1
+           ;;
+      -S | --start-openvpn-server)
+          START_OPENVPN_SERVER=true
+          shift 1
+           ;;
       --) # End of all options
           shift
           break
           ;;
       -*)
           echo "Error: Unknown option: $1" >&2
-          ## or call function display_help
+          display_help
           exit 1 
           ;;
       *)  # No more options
@@ -71,49 +155,85 @@ fi
 # OpenVPN Server               #
 ################################
 
-echo "Hold onto your butts: Installing and configuring OpenVPN Server..."
-
-LISTEN_ADDRESS=$(ip addr | grep inet | grep $INTERFACE | awk -F" " '{print $2}'| sed -e 's/\/.*$//')
-SERVER_CONFIG_FILE="/etc/openvpn/server.conf"
-
+install_openvpn() {
+echo "Hold onto your butts: Installing OpenVPN Server..."
 #Update System
 apt-get update
 
 #Install Dependencies
 apt-get install openvpn easy-rsa
 service openvpn stop
+}
+
+build_server_config_file() {
+
+if [ -z "${INTERFACE}" ]; then 
+    >&2 echo  "Invalid Arguments: An interface to listen on must provided"
+    exit 128; 
+else
+    LISTEN_ADDRESS=$(ifconfig $INTERFACE | awk -F ' *|:' '/inet addr/{print $4}')
+
+fi
+
+echo
+echo "Building Configuration File Outputting to: $SERVER_CONFIG_OUTPUT_FILE"
+echo "Setting server name to: $SERVER_NAME"
+echo "Listen Interface set to: $INTERFACE"
+echo "Setting server to listen on: $LISTEN_ADDRESS"
+echo
+
 
 #Copy example config to opevpn dir
-gunzip -c /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz > $SERVER_CONFIG_FILE
+gunzip -c /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz > $SERVER_CONFIG_OUTPUT_FILE
 
 #Modify example config
-sed -i 's|;local a.b.c.d|local '$LISTEN_ADDRESS'|' $SERVER_CONFIG_FILE
-sed -i 's|dh dh1024.pem|dh /etc/openvpn/dh2048.pem|' $SERVER_CONFIG_FILE
-sed -i 's|dh dh2048.pem|dh /etc/openvpn/dh2048.pem|' $SERVER_CONFIG_FILE
-sed -i 's|ca ca.crt|ca /etc/openvpn/easy-rsa/keys/ca.crt|' $SERVER_CONFIG_FILE
-sed -i 's|cert server.crt|cert /etc/openvpn/easy-rsa/keys/'$SERVER_NAME'.crt|' $SERVER_CONFIG_FILE
-sed -i 's|key server.key|key /etc/openvpn/easy-rsa/keys/'$SERVER_NAME'.key|' $SERVER_CONFIG_FILE
-sed -i 's|;tls-auth ta.key|tls-auth /etc/openvpn/ta.key|' $SERVER_CONFIG_FILE
-sed -i 's|;cipher AES-128-CBC |cipher AES-128-CBC|' $SERVER_CONFIG_FILE
+sed -i 's|;local a.b.c.d|local '$LISTEN_ADDRESS'|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|dh dh1024.pem|dh /etc/openvpn/dh2048.pem|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|dh dh2048.pem|dh /etc/openvpn/dh2048.pem|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|ca ca.crt|ca /etc/openvpn/easy-rsa/keys/ca.crt|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|cert server.crt|cert /etc/openvpn/easy-rsa/keys/'$SERVER_NAME'.crt|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|key server.key|key /etc/openvpn/easy-rsa/keys/'$SERVER_NAME'.key|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|;tls-auth ta.key|tls-auth /etc/openvpn/ta.key|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|;cipher AES-128-CBC |cipher AES-128-CBC|' $SERVER_CONFIG_OUTPUT_FILE
 
 #DNS Settings
-sed -i 's|;push "redirect-gateway def1 bypass-dhcp"|push "redirect-gateway def1 bypass-dhcp"|' $SERVER_CONFIG_FILE
-sed -i 's|;push "dhcp-option DNS 208.67.222.222"|push "dhcp-option DNS 208.67.222.222"|' $SERVER_CONFIG_FILE
-sed -i 's|;push "dhcp-option DNS 208.67.220.220"|push "dhcp-option DNS 208.67.220.220"|' $SERVER_CONFIG_FILE
+sed -i 's|;push "redirect-gateway def1 bypass-dhcp"|push "redirect-gateway def1 bypass-dhcp"|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|;push "dhcp-option DNS 208.67.222.222"|push "dhcp-option DNS 208.67.222.222"|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|;push "dhcp-option DNS 208.67.220.220"|push "dhcp-option DNS 208.67.220.220"|' $SERVER_CONFIG_OUTPUT_FILE
 
 
-sed -i 's|;user nobody|user nobody|' $SERVER_CONFIG_FILE
-sed -i 's|;group nogroup|group nogroup|' $SERVER_CONFIG_FILE
+sed -i 's|;user nobody|user nobody|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|;group nogroup|group nogroup|' $SERVER_CONFIG_OUTPUT_FILE
+}
 
+enable_packet_forwarding() {
+echo
+echo "Enabling Packet Forwarding..."
 #Enable Packet Forwarding
 echo 1 > /proc/sys/net/ipv4/ip_forward
 sed -i 's|#net.ipv4.ip_forward=1|net.ipv4.ip_forward=1|' /etc/sysctl.conf
 sysctl -p
+echo
+}
 
+modify_ufw_rules() {
+
+if [ -z "${INTERFACE}" ]; then 
+    >&2 echo  "Invalid Arguments: An interface to listen on must provided"
+    exit 128; 
+fi
+
+if ! type ufw > /dev/null; then
+    >&2 echo  "ufw command not found nothing to do."
+    exit 126; 
+fi
+
+echo "Modifying ufw rules..."
 #Make Firewall rule
 ufw allow 1194/u
 ufw allow proto tcp from any to any port 1194
 
+echo "Changing ufw default forwarding policy from DROP to ACCEPT..."
 sed -i 's|DEFAULT_FORWARD_POLICY="DROP"|DEFAULT_FORWARD_POLICY="ACCEPT"|'  /etc/default/ufw
 
 UFW_RULES="
@@ -126,6 +246,10 @@ UFW_RULES="
 COMMIT
 # END OPENVPN RULES
 "
+echo "Inserting the following rules into /etc/ufw/before.rules:"
+echo "$UFW_RULES"
+echo
+
 
 if grep -q "OPENVPN" /etc/ufw/before.rules
 then
@@ -138,13 +262,30 @@ else
     tail -n +10 /etc/ufw/before.rules >> /etc/ufw/before.rules.bak
     mv /etc/ufw/before.rules /etc/ufw/before.rules.default
     mv /etc/ufw/before.rules.bak /etc/ufw/before.rules
-
 fi
+echo 
+}
 
+reload_ufw() {
+
+if ! type ufw > /dev/null; then
+    >&2 echo  "ufw command not found nothing to do."
+    exit 126; 
+fi
 #Enable firewall
-echo "reenabling firewall via ufw for rules to take effect..."
+echo
+echo "Reloading firewall via ufw for rules to take effect..."
 ufw disable && ufw enable
 ufw status verbose
+}
+
+build_ca() {
+
+echo
+echo "Building Certificate Authority"
+echo "Setting server name to: $SERVER_NAME"
+echo "Output directory: /etc/openvpn/easy-rsa/keys"
+echo
 
 #Build Certificate Authority
 cp -r /usr/share/easy-rsa/ /etc/openvpn
@@ -155,8 +296,13 @@ INSERT="export KEY_NAME=\"$SERVER_NAME\""
 sed -i '70i '"$INSERT"'' /etc/openvpn/easy-rsa/vars
 
 #Generate Diffie-Hellman parameters
+echo "Generating Diffie-Hellman parameters"
+echo "Output file: /etc/openvpn/dh2048.pem"
 rm /etc/openvpn/dh2048.pem
 openssl dhparam -out /etc/openvpn/dh2048.pem 2048
+
+echo "Generating TA key"
+echo "Output file: /etc/openvpn/ta.key"
 rm /etc/openvpn/ta.key
 openvpn --genkey --secret /etc/openvpn/ta.key
 
@@ -165,14 +311,53 @@ cd /etc/openvpn/easy-rsa
 ./clean-all
 ./build-ca
 ./build-key-server $SERVER_NAME
+}
 
+start_openvpn_server() {
+
+if ! type openvpn > /dev/null; then
+    >&2 echo  "openvpn not found nothing to do. Try installing it with the -I flag"
+    exit 126; 
+fi
+
+echo
+echo "Starting OpenVPN..."
+echo
 #Start Openvpn
 echo "Starting Openvpn Server"
 service openvpn stop
 service openvpn start
 service openvpn status
+echo
+}
 
-#Check openvpn port
-echo "netstat openvpn port 1194:"
-netstat -l | grep 1194
+
+
+if [ "$INSTALL_OPENVPN" = true ] ; then
+    install_openvpn
+fi
+
+if [ "$BUILD_SERVER_CONFIG_FILE" = true ] ; then
+    build_server_config_file
+fi
+
+if [ "$ENABLE_PACKET_FORWARDING" = true ] ; then
+   enable_packet_forwarding
+fi
+
+if [ "$MODIFY_UFW_RULES" = true ] ; then
+   modify_ufw_rules
+fi
+
+if [ "$RELOAD_UFW" = true ] ; then
+   reload_ufw
+fi
+
+if [ "$BUILD_CA" = true ] ; then
+   build_ca
+fi
+
+if [ "$START_OPENVPN_SERVER" = true ] ; then
+   start_openvpn_server
+fi
 

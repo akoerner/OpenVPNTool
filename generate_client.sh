@@ -118,7 +118,8 @@ echo '</tls-auth>\n' >> $OUTPUT_FILE
 echo 'key-direction 1' >> $OUTPUT_FILE;
 
 echo "Client ovpn created: /etc/openvpn/easy-rsa/keys/$OUTPUT_FILE"
- 
+
+copy_client_certificate_to_output_dir() {
 if [ -z ${OUTPUT_DIRECTORY+x} ]; then 
     echo "No output directory provided skipping copy."; 
   
@@ -128,3 +129,4 @@ else
     #Set owner to whoever called this script
     chown $SUDO_USER $OUTPUT_DIRECTORY/$OUTPUT_FILE
 fi
+}
