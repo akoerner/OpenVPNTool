@@ -70,9 +70,12 @@ sh openvpn_install.sh -h
 
 
 ## Authors
-Andrew Koernerv - andrew@k0ner.com
+Andrew Koerner - andrew@k0ner.com
 
 
 
 ## License
 [LICENSE.md](LICENSE.md)
+
+
+To those who visit here, we wish a safe journey and the joy of discovery.
