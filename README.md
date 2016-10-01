@@ -4,8 +4,9 @@ This is a set of command line tools to install and configure OpenVPN with a basi
 generator for making single file .ovpn client files that can then be distributed.
 
 ## Getting Started
-
-git clone && cd OpenVPNTool
+```
+git clone https://github.com/akoerner/OpenVPNTool.git && cd OpenVPNTool
+```
 
 ### Prerequisites
 
@@ -41,10 +42,10 @@ openvpn_install.sh -h
 
 
 ## Authors
-Andrew Koerner
+Andrew Koernerv - andrew@k0ner.com
 
 
 
 ## License
-
+LICENSE.md
 
