@@ -1,15 +1,15 @@
 #!/bin/bash
 
-#This script installs and configures OpenVPN with a basic configuration.  Tested on Ubuntu Server 16.04 LTS use on other distributions at your own risk.
+#This script installs and configures OpenVPN with a basic configuration.  
+#Tested on Ubuntu Server 16.04 LTS and 14.04, use on other distributions at your own risk.
 
 #This script is basically an automation compilation of the following resources:
 #https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-14-04
 #https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-16-04
 #http://www.tutorialspoint.com/articles/how-to-set-up-openvpn-on-ubuntu-16-04
 
-#Usage: openvpn_install.sh -n "<server name>"  -i "<interface>"
-
-#Note: this defaults to AES-128-CBC which according to BSI recommendations of 2015 is still cryptographically secure see https://www.keylength.com/.
+#Note: this defaults to AES-128-CBC which according to 
+#      BSI recommendations of 2015 is still cryptographically secure see https://www.keylength.com/.
 
 #########################
 # The command line help #
