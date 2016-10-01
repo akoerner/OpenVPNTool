@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#This script installs and configures OpenVPN with a basic configuration.  
-#Tested on Ubuntu Server 16.04 LTS use on other distributions at your own risk.
+#This script installs and configures OpenVPN with a basic configuration.  Tested on Ubuntu Server 16.04 LTS use on other distributions at your own risk.
 
 #This script is basically an automation compilation of the following resources:
 #https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-14-04
@@ -9,8 +8,7 @@
 #http://www.tutorialspoint.com/articles/how-to-set-up-openvpn-on-ubuntu-16-04
 
 
-#Note: this defaults to AES-128-CBC which according to 
-#BSI recommendations of 2015 is still cryptographically secure see https://www.keylength.com/.
+#Note: this defaults to AES-128-CBC which according to BSI recommendations of 2015 is still cryptographically secure see https://www.keylength.com/.
 
 #########################
 # The command line help #
@@ -31,16 +29,14 @@ display_help() {
     echo "                                   openvpn via apt-get, building a server config, enabling port forwarding, inserting ufw rules,"
     echo "                                   restarting ufw(so the added rules take effect), building the certificate authority and generating keys,"
     echo "                                   and finally starting the openvpn service. Takes no arguments."
-    echo "                                   NOTE: This enables ufw! Don't lock yourself out by blocking the ssh port!"
     echo "   -I, --install-openvpn           This simply installs openvpn and its dependencies via apt-get. Takes no arguments."
     echo "   -B, --build-server-config-file  This builds server config. Optionally, you can provide an output file with the -o flag otherwiseTakes no arguments."
     echo "                                   the output file defaults to: /etc/openvpn/server.conf."
-    echo "   -o, --server-config-output-file Optional output file for the generated server config default is: /etc/openvpn/server.conf. Takes filename as argument."
+    echo "   -o, --server-config-output-file Optional output file for the generated server config default is: /etc/openvpn/SERVERNAME.conf. Takes filename as argument."
     echo "   -P, --enable-packet-forwarding  Enables packet forwarding via sysctl. Takes no arguments."
     echo "   -U, --modify-ufw-rules          Modifies ufw for enabling packet forwarding and pass-through. Takes no arguments."
     echo "   -R, --reload-ufw                Reloads ufw so that modified rules take effect. Takes no arguments."
-    echo "                                   NOTE: This enables ufw! Don't lock yourself out by blocking the ssh port!"
-    echo "   -B, --build-ca                  Generates crypto keys via easy-rsa and builds the certificate authority."
+    echo "   -C, --build-ca                  Generates crypto keys via easy-rsa and builds the certificate authority."
     echo "   -S, --start-openvpn-server      Starts the openvpn system d service."
     echo "   -h                              help"
     echo
@@ -54,12 +50,13 @@ display_help() {
 }
 
 ################################
-# Check if parameters options  #
-# are given on the command line#
+# Default Parameters           #
+#                              #
 ################################
-
-SERVER_CONFIG_OUTPUT_FILE="/etc/openvpn/server.conf"
+KEY_DIRECTORY="/etc/openvpn/easy-rsa/keys/"
+OPENVPN_DIRECTORY="/etc/openvpn/"
 SERVER_NAME="server"
+AES_CIPER="128"
 
 INSTALL_OPENVPN=false
 BUILD_SERVER_CONFIG_FILE=false
@@ -69,6 +66,10 @@ RELOAD_UFW=false
 BUILD_CA=false
 START_OPENVPN_SERVER=false
 
+################################
+# Check if parameters options  #
+# are given on the command line#
+################################
 if [ $# -eq 0 ]; then
     display_help
 fi
@@ -157,6 +158,10 @@ fi
 # OpenVPN Server               #
 ################################
 
+if [ -z "${SERVER_CONFIG_OUTPUT_FILE}" ]; then 
+    SERVER_CONFIG_OUTPUT_FILE=$OPENVPN_DIRECTORY/$SERVER_NAME.conf
+fi
+
 install_openvpn() {
 echo "Hold onto your butts: Installing OpenVPN Server..."
 #Update System
@@ -190,13 +195,13 @@ gunzip -c /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz > $
 
 #Modify example config
 sed -i 's|;local a.b.c.d|local '$LISTEN_ADDRESS'|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|dh dh1024.pem|dh /etc/openvpn/dh2048.pem|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|dh dh2048.pem|dh /etc/openvpn/dh2048.pem|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|ca ca.crt|ca /etc/openvpn/easy-rsa/keys/ca.crt|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|cert server.crt|cert /etc/openvpn/easy-rsa/keys/'$SERVER_NAME'.crt|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|key server.key|key /etc/openvpn/easy-rsa/keys/'$SERVER_NAME'.key|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|;tls-auth ta.key|tls-auth /etc/openvpn/ta.key|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|;cipher AES-128-CBC |cipher AES-128-CBC|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|dh dh1024.pem|dh '$OPENVPN_DIRECTORY'dh2048.pem|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|dh dh2048.pem|dh '$OPENVPN_DIRECTORY'dh2048.pem|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|ca ca.crt|ca '$KEY_DIRECTORY'ca.crt|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|cert server.crt|cert '$KEY_DIRECTORY'ca.crt|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|key server.key|key '$KEY_DIRECTORY''$SERVER_NAME'.key|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|;tls-auth ta.key|tls-auth '$OPENVPN_DIRECTORY'ta.key|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|;cipher AES-128-CBC |cipher AES-'$AES_CIPER'-CBC|' $SERVER_CONFIG_OUTPUT_FILE
 
 #DNS Settings
 sed -i 's|;push "redirect-gateway def1 bypass-dhcp"|push "redirect-gateway def1 bypass-dhcp"|' $SERVER_CONFIG_OUTPUT_FILE
@@ -286,33 +291,38 @@ build_ca() {
 echo
 echo "Building Certificate Authority"
 echo "Setting server name to: $SERVER_NAME"
-echo "Output directory: /etc/openvpn/easy-rsa/keys"
+echo "Output directory: $KEY_DIRECTORY"
 echo
 
 #Build Certificate Authority
 cp -r /usr/share/easy-rsa/ /etc/openvpn
 
-mkdir /etc/openvpn/easy-rsa/keys
+mkdir $KEY_DIRECTORY
 
 INSERT="export KEY_NAME=\"$SERVER_NAME\""
 sed -i '70i '"$INSERT"'' /etc/openvpn/easy-rsa/vars
 
+
+
 #Generate Diffie-Hellman parameters
 echo "Generating Diffie-Hellman parameters"
-echo "Output file: /etc/openvpn/dh2048.pem"
-rm /etc/openvpn/dh2048.pem
-openssl dhparam -out /etc/openvpn/dh2048.pem 2048
+echo "Output file: ${OPENVPN_DIRECTORY}dh2048.pem"
+rm "${OPENVPN_DIRECTORY}dh2048.pem"
+openssl dhparam -out "${OPENVPN_DIRECTORY}dh2048.pem" 2048
 
 echo "Generating TA key"
-echo "Output file: /etc/openvpn/ta.key"
-rm /etc/openvpn/ta.key
-openvpn --genkey --secret /etc/openvpn/ta.key
+echo "Output file: ${OPENVPN_DIRECTORY}ta.key"
+rm "${OPENVPN_DIRECTORY}ta.key"
+openvpn --genkey --secret "${OPENVPN_DIRECTORY}ta.key"
 
 cd /etc/openvpn/easy-rsa
 . ./vars
 ./clean-all
 ./build-ca
 ./build-key-server $SERVER_NAME
+
+
+
 }
 
 start_openvpn_server() {

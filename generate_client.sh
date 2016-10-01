@@ -2,7 +2,7 @@
 
 #This script generates openvpn client keys using the easy-rsa build-key tool and creates a single distributable .ovpn file.
 
-KEY_DIR=/etc/openvpn/easy-rsa/keys
+
 
 #########################
 # The command line help #
@@ -29,18 +29,24 @@ display_help() {
     echo "   sudo sh generate_client.sh -c client1 -o . -b base.conf -s"
     echo
     echo "Note: This will fail if there is already a client with the provided name in the database"
-    echo "All generated client keys as well as ovpn files are stored in: $KEY_DIR"
+    echo "All generated client keys as well as ovpn files are stored in: $KEY_DIRECTORY"
     exit 1
 }
+
+
+################################
+# Default Parameters           #
+#                              #
+################################
+SILENT_MODE=false
+SKIP_KEY_GENERATION=false
+SKIP_OUTPUT_FILE_GENERATION=false
+KEY_DIRECTORY="/etc/openvpn/easy-rsa/keys"
 
 ################################
 # Check if parameters options  #
 # are given on the command line#
 ################################
-SILENT_MODE=false
-SKIP_KEY_GENERATION=false
-SKIP_OUTPUT_FILE_GENERATION=false
-
 if [ $# -eq 0 ]; then
     display_help
 fi
@@ -149,25 +155,25 @@ if [ "$SKIP_OUTPUT_FILE_GENERATION" = true ] ; then
 else
   OUTPUT_FILE=$CLIENT_NAME.ovpn
   echo "Compiling output .ovpn file: $OUTPUT_FILE"
-  cat $BASE_CONFIG >> $KEY_DIR/$OUTPUT_FILE
-  echo '\n<ca>' >> $KEY_DIR/$OUTPUT_FILE
-  cat $KEY_DIR/ca.crt >> $KEY_DIR/$OUTPUT_FILE
-  echo '</ca>\n<cert>' >> $KEY_DIR/$OUTPUT_FILE
-  cat $KEY_DIR/$CLIENT_NAME.crt >> $KEY_DIR/$OUTPUT_FILE
-  echo '</cert>\n<key>' >> $KEY_DIR/$OUTPUT_FILE
-  cat $KEY_DIR/$CLIENT_NAME.key >> $KEY_DIR/$OUTPUT_FILE
-  echo '</key>\n<tls-auth>' >> $KEY_DIR/$OUTPUT_FILE
-  cat /etc/openvpn/ta.key >> $KEY_DIR/$OUTPUT_FILE
-  echo '</tls-auth>\n' >> $KEY_DIR/$OUTPUT_FILE
-  echo 'key-direction 1' >> $KEY_DIR/$OUTPUT_FILE
-  echo "Client ovpn created: $KEY_DIR/$OUTPUT_FILE"
+  cat $BASE_CONFIG >> $KEY_DIRECTORY/$OUTPUT_FILE
+  echo '\n<ca>' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  cat $KEY_DIRECTORY/ca.crt >> $KEY_DIRECTORY/$OUTPUT_FILE
+  echo '</ca>\n<cert>' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  cat $KEY_DIRECTORY/$CLIENT_NAME.crt >> $KEY_DIRECTORY/$OUTPUT_FILE
+  echo '</cert>\n<key>' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  cat $KEY_DIRECTORY/$CLIENT_NAME.key >> $KEY_DIRECTORY/$OUTPUT_FILE
+  echo '</key>\n<tls-auth>' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  cat $KEY_DIRECTORY/ta.key >> $KEY_DIRECTORY/$OUTPUT_FILE
+  echo '</tls-auth>\n' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  echo 'key-direction 1' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  echo "Client ovpn created: $KEY_DIRECTORY/$OUTPUT_FILE"
 
   if [ -z ${OUTPUT_DIRECTORY+x} ]; then 
       echo "No output directory provided skipping copy."; 
   else 
       echo "Output Directory set to: $OUTPUT_DIRECTORY";
-      echo "Copying /etc/openvpn/easy-rsa/keys/$OUTPUT_FILE to $OUTPUT_DIRECTORY/$OUTPUT_FILE"
-      cp /etc/openvpn/easy-rsa/keys/$OUTPUT_FILE $OUTPUT_DIRECTORY
+      echo "Copying $KEY_DIRECTORY/$OUTPUT_FILE to $OUTPUT_DIRECTORY/$OUTPUT_FILE"
+      cp $KEY_DIRECTORY/$OUTPUT_FILE $OUTPUT_DIRECTORY
       #Set owner to whoever called this script
       echo "Setting ownership of $OUTPUT_DIRECTORY/$OUTPUT_FILE to $SUDO_USER:"
       chown $SUDO_USER $OUTPUT_DIRECTORY/$OUTPUT_FILE
