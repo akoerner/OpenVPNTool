@@ -22,6 +22,7 @@ sudo sh openvpn_install -n SomeServer -i eth0 -F
 ```
 The -F flag does a full install.
 NOTE: This enables ufw! Don't lock yourself out by blocking the ssh port! Be sure you actually want ufw enabled.
+
 View the help for more informaiton
 ```
 sh openvpn_install.sh -h
@@ -31,7 +32,7 @@ sh openvpn_install.sh -h
 The client generator generates openvpn client keys using the easy-rsa build-key tool and creates  single distributable .ovpn files.
 ```
 sudo sh generate_client.sh -c client1 -o . -b base.conf
-````
+```
 
 View the help for more informaiton
 ```
