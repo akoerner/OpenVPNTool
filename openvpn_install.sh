@@ -1,15 +1,15 @@
 #!/bin/bash
 
-#This script installs and configures OpenVPN with a basic configuration.  
-#Tested on Ubuntu Server 16.04 LTS and 14.04, use on other distributions at your own risk.
+#This script installs and configures OpenVPN with a basic configuration.  Tested on Ubuntu Server 16.04 LTS use on other distributions at your own risk.
 
 #This script is basically an automation compilation of the following resources:
 #https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-14-04
 #https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-16-04
 #http://www.tutorialspoint.com/articles/how-to-set-up-openvpn-on-ubuntu-16-04
 
-#Note: this defaults to AES-128-CBC which according to 
-#      BSI recommendations of 2015 is still cryptographically secure see https://www.keylength.com/.
+#Usage: openvpn_install.sh -n "<server name>"  -i "<interface>"
+
+#Note: this defaults to AES-128-CBC which according to BSI recommendations of 2015 is still cryptographically secure see https://www.keylength.com/.
 
 #########################
 # The command line help #
@@ -29,7 +29,7 @@ display_help() {
     echo "   -F, --full-install              This enables a full install. All flags are executed -I, -B, -P, -U, -R and -S.  A full install entails installing" 
     echo "                                   openvpn via apt-get, building a server config, enabling port forwarding, inserting ufw rules,"
     echo "                                   restarting ufw(so the added rules take effect), building the certificate authority and generating keys,"
-    echo "                                   and finally starting the openvpn service. Takes no arguments."
+	echo "                                   and finally starting the openvpn service. Takes no arguments."
     echo "   -I, --install-openvpn           This simply installs openvpn and its dependencies via apt-get. Takes no arguments."
     echo "   -B, --build-server-config-file  This builds server config. Optionally, you can provide an output file with the -o flag otherwiseTakes no arguments."
     echo "                                   the output file defaults to: /etc/openvpn/server.conf."
@@ -66,9 +66,12 @@ RELOAD_UFW=false
 BUILD_CA=false
 START_OPENVPN_SERVER=false
 
+################################
+# Check if parameters options  #
+# are given on the command line#
+################################
 if [ $# -eq 0 ]; then
     display_help
-    exit 1
 fi
 
 while :
