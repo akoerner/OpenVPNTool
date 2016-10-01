@@ -114,17 +114,16 @@ if [ -z "${BASE_CONFIG}" ]; then
     exit 128; 
 fi
 
-################################
-# Build Client .ovpn file      #
-# OpenVPN Server               #
-################################
 
-OUTPUT_FILE=$CLIENT_NAME.ovpn
 echo
 echo "Base Configuration: $BASE_CONFIG"
 cat $BASE_CONFIG
 echo
 
+################################
+#Generate client Keys          #
+#                              #
+################################
 if [ "$SKIP_KEY_GENERATION" = true ] ; then
   echo "Skipping key generation..."
 else
@@ -141,9 +140,14 @@ else
 fi
 echo
 
+################################
+# Build Client .ovpn file      #
+#                              #
+################################
 if [ "$SKIP_OUTPUT_FILE_GENERATION" = true ] ; then
   echo "Skipping output file generation..."
 else
+  OUTPUT_FILE=$CLIENT_NAME.ovpn
   echo "Compiling output .ovpn file: $OUTPUT_FILE"
   cat $BASE_CONFIG >> $KEY_DIR/$OUTPUT_FILE
   echo '\n<ca>' >> $KEY_DIR/$OUTPUT_FILE
