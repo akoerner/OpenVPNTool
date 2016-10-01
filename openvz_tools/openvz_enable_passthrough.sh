@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#This script enables nat passthrough by inserting an iptables rule in an openvz container.
+#This script enables nat passthrough by inserting an iptables rule for openvpn running in an OpenVZ container.
 #Usage run script as root
 
 HOST=$(hostname -i)
