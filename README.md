@@ -36,26 +36,27 @@ sh openvpn_install.sh -h
 The client generator generates openvpn client keys using the easy-rsa build-key tool and creates  single distributable .ovpn files.
 
 ##### Examples
-Example #1
+
+###### Example #1
 Generate a client1.ovpn using the baseconfig base.conf and output to the current working directory in interactive mode.  Interactive mode requires user input. Client keys will be generated.
 ```
 sudo sh generate_client.sh -c client1 -o . -b base.conf
 ```
 client1.opvn can then be distributed to a user.
 
-Example #2
+###### Example #2
 Generate a client2.opvn using the baseconfig base.conf and output to the current working directory in silent mode.  Silent mode requires no user input.  All client parameters are set to the default and new client keys will be generated. 
 ```
 sh generate_client.sh -c client2 -b base.conf -o . -s
 ```
 
-Example #3
+###### Example #3
 Regenerate a client1.ovpn distributable file but do not regenerate keys.  Preexisting keys will be used to compile the client1.opvn file and the output file client1.ovpn will be output to the current working directory.
 ```
 sh generate_client.sh -c client2 -b base.conf -o . -s -x
 ```
 
-Example #3
+###### Example #3
 Generate client1 keys and do not compile an output client1.opvn distributable file in silent mode.
 ```
 sh generate_client.sh -c client2 -b base.conf -o . -s -O
