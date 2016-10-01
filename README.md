@@ -37,7 +37,7 @@ sudo sh generate_client.sh -c client1 -o . -b base.conf
 
 View the help for more informaiton
 ```
-openvpn_install.sh -h
+sh openvpn_install.sh -h
 ```
 
 
