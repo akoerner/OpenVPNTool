@@ -23,7 +23,7 @@ sudo sh openvpn_install.sh --server-name <server name>  --interface <interface> 
 
 ##### Examples
 ```
-sudo sh openvpn_install --server-name SomeServer --interface eth0 --full-install
+sudo sh openvpn_install.sh --server-name SomeServer --interface eth0 --full-install
 ```
 The -F flag does a full install.
 NOTE: This enables ufw! Don't lock yourself out by blocking the ssh port! Be sure you actually want ufw enabled.
