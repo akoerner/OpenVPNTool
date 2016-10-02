@@ -38,7 +38,8 @@ display_help() {
     echo "   -R, --reload-ufw                Reloads ufw so that modified rules take effect. Takes no arguments."
     echo "   -C, --build-ca                  Generates crypto keys via easy-rsa and builds the certificate authority."
     echo "   -S, --start-openvpn-server      Starts the openvpn system d service."
-    echo "   -s, --silent                    With this enabled the certificate generation is done non-interactive mode."
+    echo "   -s, --silent-mode               If this flag is provided then the key generation will run without user interaction. All inputs"
+    echo "                                   will be set to their default. Takes no arguments."
     echo "   -h                              help"
     echo
     echo "Example"
@@ -66,6 +67,7 @@ MODIFY_UFW_RULES=false
 RELOAD_UFW=false
 BUILD_CA=false
 START_OPENVPN_SERVER=false
+SILENT_MODE=true
 
 ################################
 # Check if parameters options  #
@@ -131,6 +133,10 @@ do
            ;;
       -S | --start-openvpn-server)
           START_OPENVPN_SERVER=true
+          shift 1
+           ;;
+      -s | --silent-mode)
+          SILENT_MODE=true
           shift 1
            ;;
       --) # End of all options
@@ -335,8 +341,17 @@ openvpn --genkey --secret "$TA_KEY_FILE"
 cd /etc/openvpn/easy-rsa
 . ./vars
 ./clean-all
-./build-ca
-./build-key-server $SERVER_NAME
+
+if [ "$SILENT_MODE" = true ] ; then
+  echo "Noninteractive mode enabled..."
+  ./pkitool --initca
+  ./pkitool --server $SERVER_NAME
+else
+  echo "Generating keys interactively..."
+  ./build-ca 
+  ./build-key-server $SERVER_NAME
+fi
+
 
 }
 
