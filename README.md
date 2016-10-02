@@ -18,12 +18,12 @@ git clone https://github.com/akoerner/OpenVPNTool.git && cd OpenVPNTool
 
 #### OpenVPNTool
 ```
-sudo sh openvpn_install.sh -n <server name>  -i <interface> -F
+sudo sh openvpn_install.sh --server-name <server name>  --interface <interface> --full-install
 ```
 
 ##### Examples
 ```
-sudo sh openvpn_install -n SomeServer -i eth0 -F
+sudo sh openvpn_install.sh --server-name SomeServer --interface eth0 --full-install
 ```
 The -F flag does a full install.
 NOTE: This enables ufw! Don't lock yourself out by blocking the ssh port! Be sure you actually want ufw enabled.
@@ -41,26 +41,26 @@ The client generator generates openvpn client keys using the easy-rsa build-key 
 ###### Example #1
 Generate a client1.ovpn using the baseconfig base.conf and output to the current working directory in interactive mode.  Interactive mode requires user input. Client keys will be generated.
 ```
-sudo sh generate_client.sh -c client1 -o . -b base.conf
+sudo sh generate_client.sh --client-name client1 --output-directory . --base-config base.conf
 ```
 client1.opvn can then be distributed to a user.
 
 ###### Example #2
 Generate a client2.opvn using the baseconfig base.conf and output to the current working directory in silent mode.  Silent mode requires no user input.  All client parameters are set to the default and new client keys will be generated. 
 ```
-sh generate_client.sh -c client2 -b base.conf -o . -s
+sh generate_client.sh --client-name client2 --base-config base.conf --output-directory . --slient-mode
 ```
 
 ###### Example #3
-Regenerate a client1.ovpn distributable file but do not regenerate keys.  Preexisting keys will be used to compile the client1.opvn file and the output file client1.ovpn will be output to the current working directory.
+Regenerate a client1.ovpn distributable file but do not regenerate keys.  Preexisting keys will be used to compile the client1.opvn file and the output file client1.ovpn will be output to the current working directory.  This can be used to simply regenerate the distributable ovpn file.
 ```
-sh generate_client.sh -c client2 -b base.conf -o . -s -x
+sh generate_client.sh --client-name client2 --base-config base.conf --output-directory . --silent-mode --skip-key-generation
 ```
 
 ###### Example #3
-Generate client1 keys and do not compile an output client1.opvn distributable file in silent mode.
+Generate client1 keys and do not compile an output client1.opvn distributable file in silent mode.  This can be used to only generate the client keys.
 ```
-sh generate_client.sh -c client2 -b base.conf -o . -s -O
+sh generate_client.sh --client-name client2 --base-config base.conf --output-directory . --silent-mode --skip-output-file-generation
 ```
 
 
