@@ -23,6 +23,7 @@ display_help() {
     echo "   -x, --skip-keygen                   Only the client ovpn file will be built with pre-existing keys if -O is not enabled. The key generation will be skipped. Takes no arguments."
     echo "                                       NOTE: This will fail if there are no keys already generated."
     echo "   -O, --skip-output-file-generation   Only the client keys will be generated provided -x is not enabled. The .ovpn output file generation will be skipped. Takes no arguments."
+    echo "   -f, --force                         Overwrite existing client output ovpn file."
     echo
     echo "Example"
     echo "   sudo sh generate_client.sh -c client1 -o . -b base.conf"
@@ -41,6 +42,7 @@ display_help() {
 SILENT_MODE=false
 SKIP_KEY_GENERATION=false
 SKIP_OUTPUT_FILE_GENERATION=false
+OVERWRITE_OUTPUT_FILE=false
 KEY_DIRECTORY="/etc/openvpn/easy-rsa/keys"
 OPENVPN_DIRECTORY="/etc/openvpn"
 
@@ -81,6 +83,10 @@ do
            ;;
       -O | --skip-output-file-generation)
           SKIP_OUTPUT_FILE_GENERATION=true
+           shift 1
+           ;;
+      -f | --force)
+          OVERWRITE_OUTPUT_FILE=true
            shift 1
            ;;
       --) # End of all options
@@ -135,6 +141,12 @@ if [ "$SKIP_KEY_GENERATION" = true ] ; then
   echo "Skipping key generation..."
 else
   echo "Generating Keys..."
+  
+  if [ -f "$KEY_DIRECTORY/$CLIENT_NAME.key" ];
+  then
+    >&2 echo "Error: Key for client: $CLIENT_NAME already exists. Choose a different client name."
+    exit 126; 
+  fi
   CWD=$(pwd)
   cd /etc/openvpn/easy-rsa/
   . /etc/openvpn/easy-rsa/vars
@@ -155,8 +167,15 @@ if [ "$SKIP_OUTPUT_FILE_GENERATION" = true ] ; then
   echo "Skipping output file generation..."
 else
   OUTPUT_FILE=$CLIENT_NAME.ovpn
+  
+  if [ -f "$KEY_DIRECTORY/$OUTPUT_FILE" ] && [ "$OVERWRITE_OUTPUT_FILE" = false ];
+  then
+    >&2 echo "Error: Output File: $KEY_DIRECTORY/$OUTPUT_FILE already exists.  Rerun with -f flag to overwrite."
+    exit 126; 
+  fi
+  
   echo "Compiling output .ovpn file: $OUTPUT_FILE"
-  cat $BASE_CONFIG >> $KEY_DIRECTORY/$OUTPUT_FILE
+  cat $BASE_CONFIG > $KEY_DIRECTORY/$OUTPUT_FILE
   echo '\n<ca>' >> $KEY_DIRECTORY/$OUTPUT_FILE
   cat $KEY_DIRECTORY/ca.crt >> $KEY_DIRECTORY/$OUTPUT_FILE
   echo '</ca>\n<cert>' >> $KEY_DIRECTORY/$OUTPUT_FILE
