@@ -3,11 +3,12 @@
 This is a set of command line tools to install and configure OpenVPN with a basic configuration specifically for Ubuntu 16.04 and 14.04 with ufw.  This project also contains a client 
 generator for making single file .ovpn client files that can then be distributed.
 
-## Prerequisites
+## Getting Started
+
+### Prerequisites
 
 Ubuntu 16.04 LTS or Ubuntu 14.04 LTS and ufw
 
-## Getting Started
 Clone the repository
 ```
 git clone https://github.com/akoerner/OpenVPNTool.git && cd OpenVPNTool
