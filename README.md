@@ -68,7 +68,14 @@ View the help for more information
 ```
 sh openvpn_install.sh -h
 ```
+### The Dark Arts
+Here are a few one line incantations of awesomeness
 
+
+Generate 10 clients
+```
+mkdir clients && for ((n=0;n<10;n++)); do sh generate_client.sh --client-name client$n --output-directory clients/ --base-config base.conf --silent-mode; done
+```
 
 ## Authors
 Andrew Koerner - andrew@k0ner.com
