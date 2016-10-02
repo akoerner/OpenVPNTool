@@ -42,6 +42,7 @@ SILENT_MODE=false
 SKIP_KEY_GENERATION=false
 SKIP_OUTPUT_FILE_GENERATION=false
 KEY_DIRECTORY="/etc/openvpn/easy-rsa/keys"
+OPENVPN_DIRECTORY="/etc/openvpn"
 
 ################################
 # Check if parameters options  #
@@ -163,7 +164,7 @@ else
   echo '</cert>\n<key>' >> $KEY_DIRECTORY/$OUTPUT_FILE
   cat $KEY_DIRECTORY/$CLIENT_NAME.key >> $KEY_DIRECTORY/$OUTPUT_FILE
   echo '</key>\n<tls-auth>' >> $KEY_DIRECTORY/$OUTPUT_FILE
-  cat $KEY_DIRECTORY/ta.key >> $KEY_DIRECTORY/$OUTPUT_FILE
+  cat $OPENVPN_DIRECTORY/ta.key >> $KEY_DIRECTORY/$OUTPUT_FILE
   echo '</tls-auth>\n' >> $KEY_DIRECTORY/$OUTPUT_FILE
   echo 'key-direction 1' >> $KEY_DIRECTORY/$OUTPUT_FILE
   echo "Client ovpn created: $KEY_DIRECTORY/$OUTPUT_FILE"

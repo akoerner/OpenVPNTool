@@ -38,6 +38,7 @@ display_help() {
     echo "   -R, --reload-ufw                Reloads ufw so that modified rules take effect. Takes no arguments."
     echo "   -C, --build-ca                  Generates crypto keys via easy-rsa and builds the certificate authority."
     echo "   -S, --start-openvpn-server      Starts the openvpn system d service."
+    echo "   -s, --silent                    With this enabled the certificate generation is done non-interactive mode."
     echo "   -h                              help"
     echo
     echo "Example"
@@ -193,15 +194,33 @@ echo
 #Copy example config to opevpn dir
 gunzip -c /usr/share/doc/openvpn/examples/sample-config-files/server.conf.gz > $SERVER_CONFIG_OUTPUT_FILE
 
+DH_PEM_FILE="${OPENVPN_DIRECTORY}dh2048.pem"
+CA_CRT_FILE="${KEY_DIRECTORY}ca.crt"
+CA_KEY_FILE="${KEY_DIRECTORY}ca.key"
+SERVER_CRT_FILE="$KEY_DIRECTORY$SERVER_NAME.crt"
+SERVER_KEY_FILE="$KEY_DIRECTORY$SERVER_NAME.key"
+TA_KEY_FILE="${OPENVPN_DIRECTORY}ta.key"
+CIPHER="AES-$AES_CIPER-CBC"
+
+echo
+echo "DH pem file: $DH_PEM_FILE"
+echo "CA cert file: $CA_CRT_FILE"
+echo "CA key file: $CA_KEY_FILE"
+echo "Server crt file: $SERVER_CRT_FILE"
+echo "Server key file: $SERVER_KEY_FILE"
+echo "TA key file: $TA_KEY_FILE"
+echo "Cipher: $CIPHER"
+echo
+
 #Modify example config
 sed -i 's|;local a.b.c.d|local '$LISTEN_ADDRESS'|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|dh dh1024.pem|dh '$OPENVPN_DIRECTORY'dh2048.pem|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|dh dh2048.pem|dh '$OPENVPN_DIRECTORY'dh2048.pem|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|ca ca.crt|ca '$KEY_DIRECTORY'ca.crt|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|cert server.crt|cert '$KEY_DIRECTORY'ca.crt|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|key server.key|key '$KEY_DIRECTORY''$SERVER_NAME'.key|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|;tls-auth ta.key|tls-auth '$OPENVPN_DIRECTORY'ta.key|' $SERVER_CONFIG_OUTPUT_FILE
-sed -i 's|;cipher AES-128-CBC |cipher AES-'$AES_CIPER'-CBC|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|dh dh1024.pem|dh '$DH_PEM_FILE'|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|dh dh2048.pem|dh '$DH_PEM_FILE'|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|ca ca.crt|ca '$CA_CRT_FILE'|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|cert server.crt|cert '$SERVER_CRT_FILE'|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|key server.key|key '$SERVER_KEY_FILE'|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|;tls-auth ta.key|tls-auth '$TA_KEY_FILE'|' $SERVER_CONFIG_OUTPUT_FILE
+sed -i 's|;cipher AES-128-CBC |cipher '$CIPHER'|' $SERVER_CONFIG_OUTPUT_FILE
 
 #DNS Settings
 sed -i 's|;push "redirect-gateway def1 bypass-dhcp"|push "redirect-gateway def1 bypass-dhcp"|' $SERVER_CONFIG_OUTPUT_FILE
@@ -302,26 +321,22 @@ mkdir $KEY_DIRECTORY
 INSERT="export KEY_NAME=\"$SERVER_NAME\""
 sed -i '70i '"$INSERT"'' /etc/openvpn/easy-rsa/vars
 
-
-
 #Generate Diffie-Hellman parameters
 echo "Generating Diffie-Hellman parameters"
-echo "Output file: ${OPENVPN_DIRECTORY}dh2048.pem"
-rm "${OPENVPN_DIRECTORY}dh2048.pem"
-openssl dhparam -out "${OPENVPN_DIRECTORY}dh2048.pem" 2048
+echo "Output file: $DH_PEM_FILE"
+rm "$DH_PEM_FILE"
+openssl dhparam -out "$DH_PEM_FILE" 2048
 
 echo "Generating TA key"
-echo "Output file: ${OPENVPN_DIRECTORY}ta.key"
-rm "${OPENVPN_DIRECTORY}ta.key"
-openvpn --genkey --secret "${OPENVPN_DIRECTORY}ta.key"
+echo "Output file: $TA_KEY_FILE"
+rm "$TA_KEY_FILE"
+openvpn --genkey --secret "$TA_KEY_FILE"
 
 cd /etc/openvpn/easy-rsa
 . ./vars
 ./clean-all
 ./build-ca
 ./build-key-server $SERVER_NAME
-
-
 
 }
 
@@ -337,10 +352,11 @@ echo "Starting OpenVPN..."
 echo
 #Start Openvpn
 echo "Starting Openvpn Server"
-service openvpn stop
-service openvpn start
-service openvpn status
+service openvpn stop $SERVER_NAME
+service openvpn start $SERVER_NAME
+service openvpn status $SERVER_NAME
 echo
+
 }
 
 
