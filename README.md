@@ -77,6 +77,14 @@ Generate 10 clients
 mkdir clients && for ((n=0;n<10;n++)); do sh generate_client.sh --client-name client$n --output-directory clients/ --base-config base.conf --silent-mode; done
 ```
 
+### Bonus For OpenVZ Containers
+Installing OpenVPN in an OpenVZ container one-liner
+
+There is a weird issue when installing OpenVPN inside a OpenVZ container that prevents the system.d service from running.  This one-liner installs, configures and patches openvpn for this instance.
+```
+sh openvpn_install.sh --server-name server --interface eth0 --install-openvpn --build-server-config-file --enable-packet-forwarding --modify-ufw-rules --reload-ufw --build-ca --silent-mode && sh openvz_tools/openvz_openvpn_patch.sh && sh openvpn_install.sh --server-name server --start-openvpn-server 
+```
+
 ## Authors
 Andrew Koerner - andrew@k0ner.com
 
