@@ -176,16 +176,16 @@ else
   
   echo "Compiling output .ovpn file: $OUTPUT_FILE"
   cat $BASE_CONFIG > $KEY_DIRECTORY/$OUTPUT_FILE
-  echo '\n<ca>' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  printf '\n<ca>' >> $KEY_DIRECTORY/$OUTPUT_FILE
   cat $KEY_DIRECTORY/ca.crt >> $KEY_DIRECTORY/$OUTPUT_FILE
-  echo '</ca>\n<cert>' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  printf '</ca>\n<cert>' >> $KEY_DIRECTORY/$OUTPUT_FILE
   cat $KEY_DIRECTORY/$CLIENT_NAME.crt >> $KEY_DIRECTORY/$OUTPUT_FILE
-  echo '</cert>\n<key>' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  printf '</cert>\n<key>' >> $KEY_DIRECTORY/$OUTPUT_FILE
   cat $KEY_DIRECTORY/$CLIENT_NAME.key >> $KEY_DIRECTORY/$OUTPUT_FILE
-  echo '</key>\n<tls-auth>' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  printf '</key>\n<tls-auth>' >> $KEY_DIRECTORY/$OUTPUT_FILE
   cat $OPENVPN_DIRECTORY/ta.key >> $KEY_DIRECTORY/$OUTPUT_FILE
-  echo '</tls-auth>\n' >> $KEY_DIRECTORY/$OUTPUT_FILE
-  echo 'key-direction 1' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  printf '</tls-auth>\n' >> $KEY_DIRECTORY/$OUTPUT_FILE
+  printf 'key-direction 1' >> $KEY_DIRECTORY/$OUTPUT_FILE
   echo "Client ovpn created: $KEY_DIRECTORY/$OUTPUT_FILE"
 
   if [ -z ${OUTPUT_DIRECTORY+x} ]; then 
